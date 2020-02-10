@@ -1,0 +1,26 @@
+{
+  "files": {
+    "main.css": "/agrix/static/css/main.3d4ccffb.chunk.css",
+    "main.js": "/agrix/static/js/main.33184274.chunk.js",
+    "main.js.map": "/agrix/static/js/main.33184274.chunk.js.map",
+    "runtime-main.js": "/agrix/static/js/runtime-main.684730e7.js",
+    "runtime-main.js.map": "/agrix/static/js/runtime-main.684730e7.js.map",
+    "static/css/2.4d9d6d08.chunk.css": "/agrix/static/css/2.4d9d6d08.chunk.css",
+    "static/js/2.05a2f35a.chunk.js": "/agrix/static/js/2.05a2f35a.chunk.js",
+    "static/js/2.05a2f35a.chunk.js.map": "/agrix/static/js/2.05a2f35a.chunk.js.map",
+    "index.html": "/agrix/index.html",
+    "precache-manifest.ad47fc3dbfbddf12c2fa9c13301f1932.js": "/agrix/precache-manifest.ad47fc3dbfbddf12c2fa9c13301f1932.js",
+    "service-worker.js": "/agrix/service-worker.js",
+    "static/css/2.4d9d6d08.chunk.css.map": "/agrix/static/css/2.4d9d6d08.chunk.css.map",
+    "static/css/main.3d4ccffb.chunk.css.map": "/agrix/static/css/main.3d4ccffb.chunk.css.map",
+    "static/media/logo.png": "/agrix/static/media/logo.d2193e82.png",
+    "static/media/result.pdf": "/agrix/static/media/result.523b36af.pdf"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.684730e7.js",
+    "static/css/2.4d9d6d08.chunk.css",
+    "static/js/2.05a2f35a.chunk.js",
+    "static/css/main.3d4ccffb.chunk.css",
+    "static/js/main.33184274.chunk.js"
+  ]
+}
