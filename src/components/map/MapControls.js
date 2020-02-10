@@ -56,8 +56,8 @@ const data = [
     blockName: 'Manapparai'
   }
 ];
-const plainOptions = ['Crop Type', 'Date of Sowing', 'Crop yield', 'Crop profile'];
-const defaultCheckedList = ['Crop Type', 'Date of Sowing'];
+const plainOptions = ['Date of Sowing', 'Crop yield', 'Crop profile'];
+const defaultCheckedList = ['Crop yield','Date of Sowing'];
 const notifications = ['Email', 'Push Notification', 'Whatsapp'];
 const defaultNotifications = ['Email'];
 const { confirm } = Modal
@@ -369,7 +369,7 @@ const MapControls = ({ editAction, submit, clearDraw, handleSubmit, draw }) => {
         <Tooltip placement="left" title='Statistics'><button style={{ backgroundColor: `${edit ? '#004590' : ''}` }} onClick={onStats}><Icon type="area-chart" /></button>{/* //#004590 */}</Tooltip>
       </div>}
       <Modal
-        title={<div><img src={Logo} height='32' alt='logo' /><span style={{ float: 'right' }}>Agri-X</span></div>}
+        title={<div><span>Agri-X</span></div>}
         visible={stats}
         footer={null}
         centered
@@ -386,7 +386,7 @@ const MapControls = ({ editAction, submit, clearDraw, handleSubmit, draw }) => {
           </Row><br />
           <Row>
             <Col span={24}>
-              <Text strong>Job Submitted By: </Text><Text>Experian1</Text>
+              <Text strong>Job Submitted By: </Text><Text>Mano</Text>
             </Col>
           </Row>
           <Divider />

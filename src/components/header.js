@@ -16,10 +16,8 @@ const Head = ({toggleDraw, showDraw, setLog, logged}) => {
         <Icon type={showDraw ? "menu-fold" : "menu-unfold"} />
       </Button>}
       <Link to='/'>
-      <img src={Logo} height='32' alt='logo' />
-      {/* <img border="0" height="55" hspace="10" src="/brand/1122582/site_oneexperian/brand/1logo.jpg"/> */}
+      <Text strong>Agri-X</Text>
       </Link>
-      <Text strong> | Agri-X</Text>
       <span style={{ float: 'right' }}>
         { logged && <Button type="link" size='large'>
           <Icon type="bell" />
