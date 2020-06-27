@@ -21,7 +21,6 @@ import { message } from 'antd';
 import './Map.css';
 
 const center = [0, 0];
-const { REACT_APP_DOMAIN: domain, REACT_APP_LOGIN_PORT: port } = process.env;
 
 const styleBorder = feature => new Style({
   stroke: new Stroke({
@@ -62,7 +61,7 @@ const Map = ({height,width,logged}) => {
   const [zoom, setZoom] = useState(defaultZoom);
   const [showSubmit, setShowSubmit] = useState(defaultShowSubmit);
   //const [level, setLevel] = useState(defaultLevel);
-  let level = defaultLevel;
+  let level = useRef(defaultLevel);
 
   const handleSubmit = (showSubmit) => {
     setShowSubmit(showSubmit);
@@ -91,10 +90,11 @@ const Map = ({height,width,logged}) => {
   }
 
   const selectArea = (source, id) => {
-    let url = `https://agrix-api.herokuapp.com/server/api/division?level=${level}`;
-    if (level === 1)
+    let url = `https://agrix-api.herokuapp.com/server/api/division?level=${level.current}`;
+    let {current} = level;
+    if (current === 1)
       url += `&blockId=${id}`;
-    if (level === 0 || (level === 1 && id)) {
+    if (current === 0 || (current === 1 && id)) {
       let hide = message.loading('Loading Map', 0);
       axios.get(url).then(res => {
         if (!res.data.status)
@@ -106,21 +106,21 @@ const Map = ({height,width,logged}) => {
           })).readFeatures(res.data.data)
         });
         let layer;
-        if (level === 0) {
+        if (current === 0) {
           layer = olmap.getLayers().array_[1]
           //setLevel(1);
-          level = 1;
-        } else if (level === 1) {
+          level.current = 1;
+        } else if (level.current === 1) {
           layer = olmap.getLayers().array_[3];
         }
         layer.setSource(boundarySource);
         setTimeout(() => {
-          if (level === 1) {
+          if (level.current === 1) {
             fitToExtent(source.getFeatures().getArray()[0])
           }
         }, 500);
         hide();
-      }, res => { if (level === 0) hide(); });
+      }, res => { if (level.current === 0) hide(); });
     }
   }
 
@@ -169,18 +169,19 @@ const Map = ({height,width,logged}) => {
       let newZoom = olmap.getView().getZoom();
       setZoom(newZoom);
     });
+    // eslint-disable-next-line
   },[]);
 
   //componentDidUpdate
   useEffect(()=>{
-      if (logged && level === -1) {
+      if (logged && level.current === -1) {
         let hide = message.loading('Loading Map', 0);
         axios.get(`https://agrix-api.herokuapp.com/server/api/location/geojson`).then(res => {
           if (!res.data.status) {
             return;
           }
           //setLevel(0);
-          level = 0;
+          level.current = 0;
           let boundarySource = new VectorSource({
             features: (new GeoJSON({
               dataProjection: 'EPSG:4326',
@@ -210,6 +211,7 @@ const Map = ({height,width,logged}) => {
           olmap.removeInteraction(select);
           select.removeEventListener('select');
       } 
+      // eslint-disable-next-line
     },[logged]);
   
   //updateMap

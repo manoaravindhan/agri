@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Icon, Modal, Steps, Button, Divider, Result, Table, Form, Select, DatePicker, Timeline, notification, Checkbox, Tooltip, Typography, Row, Col } from 'antd';
 import propTypes from "prop-types";
 import ApexCharts from 'apexcharts';
-import Logo from '../../images/logo.png';
 import result from './static/result.pdf'
 
 const { Item: TimelineItem } = Timeline;
@@ -56,8 +55,8 @@ const data = [
     blockName: 'Manapparai'
   }
 ];
-const plainOptions = ['Date of Sowing', 'Crop yield', 'Crop profile'];
-const defaultCheckedList = ['Crop yield','Date of Sowing'];
+const plainOptions = ['Crop profile', 'NDVI Timeline', 'Date of Sowing', 'Crop yield'];
+const defaultCheckedList = ['Crop profile'];
 const notifications = ['Email', 'Push Notification', 'Whatsapp'];
 const defaultNotifications = ['Email'];
 const { confirm } = Modal

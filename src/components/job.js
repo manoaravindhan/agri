@@ -112,14 +112,14 @@ function Job(){
             key: 'completed',
             ...getColumnSearchProps('completed'),
             sorter: (a, b) => compareByAlph(a.completed, b.completed),
-            render: c => <Progress percent={c} status={(c < 100)?"active":"success"} />
+            render: c => <Progress strokeColor={c === 100 ? {'0%': '#108ee9','100%': '#87d068'} : null} percent={c} status={(c < 100)?"active":"success"} />
         },
         {
             title: 'Actions',
             //width: '15%',
             render: c => {
                 return c.status === 'Completed' ? <span>
-                    <Link to='results'><Button type='link'><Icon type="eye" /></Button> </Link>
+                    <Link to={`results/${c.value}`}><Button type='link'><Icon type="eye" /></Button> </Link>
                     <Divider type='vertical' />
                     <Button type='link' onClick={() => showDownload(true)}><Icon type="download" /></Button>
                     <Divider type='vertical' />

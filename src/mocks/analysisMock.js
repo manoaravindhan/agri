@@ -2,10 +2,29 @@ export default [
     {
         key: '621821',
         description: 'Pudhukottai',
-        name: 'mano',
-        createdOn: '2019-11-18 10:10:10',
+        name: 'farmwise',
+        createdOn: '2020-06-30 10:10:10',
         completed: 100,
-        status: 'Completed'
+        status: 'Completed',
+        value:'profile'
+    },
+    {
+        key: '621721',
+        description: 'Pudhukottai',
+        name: 'farmwise',
+        createdOn: '2020-06-30 10:10:10',
+        completed: 100,
+        status: 'Completed',
+        value:'riceprofile'
+    },
+    {
+        key: '621565',
+        description: 'Pudhukottai',
+        name: 'user51',
+        createdOn: '2020-06-30 10:10:10',
+        completed: 100,
+        status: 'Completed',
+        value:'ndvi'
     },
     {
         key: '621822',

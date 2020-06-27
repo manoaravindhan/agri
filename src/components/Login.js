@@ -7,7 +7,6 @@ function Login(props) {
   const [error, setError] = useState('');
   const handleSubmit = e => {
     e.preventDefault();
-    let { REACT_APP_DOMAIN: domain, REACT_APP_LOGIN_PORT: port } = process.env;
     props.form.validateFields((err, values) => {
       if (!err) {
         let hide = message.loading('Loading User', 0);

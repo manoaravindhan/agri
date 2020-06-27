@@ -2,7 +2,6 @@ import React from 'react';
 import { Layout } from 'antd';
 import { Icon, Button, Typography, Tooltip } from 'antd';
 import { Link } from "react-router-dom";
-import Logo from '../images/logo.png';
 import UserAction from './UserAction';
 
 const { Text } = Typography;
