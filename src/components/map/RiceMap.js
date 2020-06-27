@@ -11,7 +11,6 @@ import { defaults } from 'ol/interaction'
 import Draw from 'ol/interaction/Draw';
 import { doubleClick } from 'ol/events/condition';
 import Select from 'ol/interaction/Select';
-import { Fill, Stroke, Style, Text } from 'ol/style';
 import windowDimensions from 'react-window-dimensions';
 import PropType from 'prop-types';
 import axios from 'axios';
@@ -30,37 +29,6 @@ const CheckboxGroup = Checkbox.Group;
 
 const center = [0, 0];
 
-const generateStyle = (strokeClr, fillClr, text, txtFillClr) => new Style({
-  stroke: new Stroke({
-    color: strokeClr,
-    width: 1
-  }),
-  fill: new Fill({
-    color: fillClr
-  }),
-  text: new Text({
-    text: text,
-    fill: new Fill({
-      color: txtFillClr
-    })
-  })
-});
-const styleBorder = feature => {
-  const { yield: y } = feature.values_;
-  switch (y) {
-    case 'Crop standing for full season':
-      return generateStyle('#A03582', '#87d068', feature.values_.BLKNAME, '#000');
-    case 'Crops failed end-season':
-      return generateStyle('#A03582', '#FADA5E', feature.values_.BLKNAME, '#000');
-    case 'Crops failed mid-season':
-      return generateStyle('#A03582', '#ff6347', feature.values_.BLKNAME, '#000');
-    case 'Crops failed in 30 days':
-      return generateStyle('#A03582', '#D3D3D3', feature.values_.BLKNAME, '#000');
-    default:
-      return generateStyle('#A03582', 'rgba(255, 255, 0, 0.1)', feature.values_.BLKNAME, '#f56a00');
-  }
-
-}
 const plainOptions = ['Crop standing for full season', 'Crops failed end-season', 'Crops failed mid-season', 'Crops failed in 30 days'];
 let popup;
 
