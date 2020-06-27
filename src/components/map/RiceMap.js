@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import OlMap from "ol/Map";
 import OlView from "ol/View";
 import OlLayerTile from "ol/layer/Tile";
+import TileLayer from 'ol/layer/Tile';
+import TileWMS from 'ol/source/TileWMS';
 import GeoJSON from 'ol/format/GeoJSON';
 import OlSourceOSM from "ol/source/OSM";
 import Zoom from 'ol/control/Zoom';
@@ -73,7 +75,7 @@ class Map extends Component {
     };
     this.draw = null;
   }
-  profit = (y)=> {
+  profit = (y) => {
     switch (y) {
       case 'Crop standing for full season':
         return '$54000'
@@ -109,17 +111,19 @@ class Map extends Component {
     let boundarySource = new VectorSource();
     let boundaryLayer = new VectorLayer({
       source: boundarySource,
-      style: f => styleBorder(f)
+     // style: f => styleBorder(f)
     });
-    let level1Source = new VectorSource();
-    let level1Layer = new VectorLayer({
-      source: level1Source,
-      style: f => styleBorder(f)
-    });
-    this.drawSource = new VectorSource({ wrapX: false });
-    var drawVector = new VectorLayer({
-      source: this.drawSource
-    });
+    boundaryLayer.setZIndex(1);
+
+    const geoTiff = new TileLayer({
+      source: new TileWMS({
+        url: 'http://13.93.35.162:8080/geoserver/agrix/wms',
+        params: { 'LAYERS': 'agrix:ricemap', 'TILED': true },
+        transition: 0
+      })
+    })
+    geoTiff.setZIndex(0);
+    
     this.view = new OlView({
       center,
       zoom: this.state.zoom
@@ -127,6 +131,7 @@ class Map extends Component {
     var raster = new OlLayerTile({
       source: new OlSourceOSM()
     });
+
     this.olmap = new OlMap({
       interactions: defaults({
         doubleClickZoom: false
@@ -135,8 +140,7 @@ class Map extends Component {
       layers: [
         raster,
         boundaryLayer,
-        drawVector,
-        level1Layer
+        geoTiff
       ],
       controls: [
         new Zoom({

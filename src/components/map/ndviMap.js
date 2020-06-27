@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import OlMap from "ol/Map";
 import OlView from "ol/View";
 import OlLayerTile from "ol/layer/Tile";
+import TileLayer from 'ol/layer/Tile';
+import TileWMS from 'ol/source/TileWMS';
 import GeoJSON from 'ol/format/GeoJSON';
 import OlSourceOSM from "ol/source/OSM";
 import Zoom from 'ol/control/Zoom';
@@ -20,7 +22,7 @@ import MapControl from './MapControls';
 import 'ol/ol.css';
 import './Map.css';
 import { message, Checkbox, Card, Typography } from 'antd';
-import { filterGeo } from './utils/filter';
+import { border } from './utils/filter';
 import Popup from 'ol-popup';
 
 const { Text: TypographyText } = Typography;
@@ -73,7 +75,7 @@ class Map extends Component {
     };
     this.draw = null;
   }
-  profit = (y)=> {
+  profit = (y) => {
     switch (y) {
       case 'Crop standing for full season':
         return '$54000'
@@ -109,17 +111,19 @@ class Map extends Component {
     let boundarySource = new VectorSource();
     let boundaryLayer = new VectorLayer({
       source: boundarySource,
-      style: f => styleBorder(f)
+      // style: f => styleBorder(f)
     });
-    let level1Source = new VectorSource();
-    let level1Layer = new VectorLayer({
-      source: level1Source,
-      style: f => styleBorder(f)
-    });
-    this.drawSource = new VectorSource({ wrapX: false });
-    var drawVector = new VectorLayer({
-      source: this.drawSource
-    });
+    boundaryLayer.setZIndex(1);
+
+    const geoTiff = new TileLayer({
+      source: new TileWMS({
+        url: 'http://13.93.35.162:8080/geoserver/agrix/wms',
+        params: { 'LAYERS': 'agrix:ricemap', 'TILED': true },
+        transition: 0
+      })
+    })
+    geoTiff.setZIndex(0);
+
     this.view = new OlView({
       center,
       zoom: this.state.zoom
@@ -127,6 +131,7 @@ class Map extends Component {
     var raster = new OlLayerTile({
       source: new OlSourceOSM()
     });
+
     this.olmap = new OlMap({
       interactions: defaults({
         doubleClickZoom: false
@@ -135,8 +140,7 @@ class Map extends Component {
       layers: [
         raster,
         boundaryLayer,
-        drawVector,
-        level1Layer
+        geoTiff
       ],
       controls: [
         new Zoom({
@@ -165,12 +169,12 @@ class Map extends Component {
         features: (new GeoJSON({
           dataProjection: 'EPSG:4326',
           featureProjection: 'EPSG:3857'
-        })).readFeatures(filterGeo())
+        })).readFeatures(border())
       });
       this.olmap.getLayers().array_[1].setSource(boundarySource);
       this.olmap.addInteraction(this.select);
       setTimeout(() => {
-        this.olmap.getView().fit([8732783.276223768, 1101579.0139838243, 8823962.420483025, 1201976.8502093428], { duration: 2000 });
+        this.olmap.getView().fit([8823982.406776493, 1150810.877901873, 8879364.36451017, 1233892.0199781533], { duration: 2000 });
         popup = new Popup();
         this.olmap.addOverlay(popup);
         this.showPop();
@@ -273,7 +277,7 @@ class Map extends Component {
       features: (new GeoJSON({
         dataProjection: 'EPSG:4326',
         featureProjection: 'EPSG:3857'
-      })).readFeatures(filterGeo(checkedList))
+      })).readFeatures(border(checkedList))
     });
     this.olmap.getLayers().array_[1].setSource(boundarySource);
     this.olmap.addInteraction(this.select);
