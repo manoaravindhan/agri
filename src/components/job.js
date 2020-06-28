@@ -67,7 +67,6 @@ function Job(){
             />
         ),
     });
-
     const columns = [
         {
             title: 'ID',

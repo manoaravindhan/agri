@@ -20,17 +20,15 @@ import './styles/map.scss';
 import MapControl from './MapControls';
 import 'ol/ol.css';
 import './Map.css';
-import { message, Checkbox, Card, Typography } from 'antd';
+import { message, Card, Typography, Button, Icon } from 'antd';
 import { border } from './utils/filter';
-import Popup from 'ol-popup';
 
 const { Text: TypographyText } = Typography;
-const CheckboxGroup = Checkbox.Group;
 
 const center = [0, 0];
 
 const plainOptions = ['Crop standing for full season', 'Crops failed end-season', 'Crops failed mid-season', 'Crops failed in 30 days'];
-let popup;
+
 
 class Map extends Component {
   constructor(props) {
@@ -39,6 +37,8 @@ class Map extends Component {
       zoom: 1,
       showSubmit: false,
       level: -1,
+      time: 0,
+      timeline: 'pause',
       checkedList: ['Crop standing for full season', 'Crops failed end-season', 'Crops failed mid-season', 'Crops failed in 30 days']
     };
     this.draw = null;
@@ -57,24 +57,6 @@ class Map extends Component {
         return 'NA'
     }
   }
-  showPop = () => {
-    this.olmap.on('pointermove', (event) => {
-      if (event)
-        this.olmap.forEachFeatureAtPixel(event.pixel,
-          feature => {
-            const { values_ } = feature;
-            if (values_) {
-              popup.show(event.coordinate, `<div><p>Area: ${values_.AREA}sq.km</p><p>Expected Claim Amount: $${values_.amount || 0}</p></div>`);
-            }
-          },
-          {
-            layerFilter: (layer) => {
-              return (layer.type === new VectorLayer().type) ? true : false;
-            }, hitTolerance: 6
-          }
-        );
-    });
-  }
   configureMap = () => {
     let boundarySource = new VectorSource();
     let boundaryLayer = new VectorLayer({
@@ -83,14 +65,14 @@ class Map extends Component {
     });
     boundaryLayer.setZIndex(1);
 
-    const geoTiff = new TileLayer({
+    this.geoTiff = new TileLayer({
       source: new TileWMS({
         url: 'http://13.93.35.162:8080/geoserver/agrix/wms',
-        params: { 'LAYERS': 'agrix:ricemap', 'TILED': true },
+        params: { 'LAYERS': `agrix:ndvi1`, 'TILED': true },
         transition: 0
       })
     })
-    geoTiff.setZIndex(0);
+    this.geoTiff.setZIndex(0);
 
     this.view = new OlView({
       center,
@@ -108,7 +90,7 @@ class Map extends Component {
       layers: [
         raster,
         boundaryLayer,
-        geoTiff
+        this.geoTiff
       ],
       controls: [
         new Zoom({
@@ -132,7 +114,7 @@ class Map extends Component {
       this.setState({ zoom });
     });
     if (this.props.logged) {
-      let hide = message.loading('Loading Analysis for Pudhukottai : 621821', 0);
+      let hide = message.loading('Loading Analysis for Tanjore : 621821', 0);
       let boundarySource = new VectorSource({
         features: (new GeoJSON({
           dataProjection: 'EPSG:4326',
@@ -143,9 +125,6 @@ class Map extends Component {
       this.olmap.addInteraction(this.select);
       setTimeout(() => {
         this.olmap.getView().fit([8823982.406776493, 1150810.877901873, 8879364.36451017, 1233892.0199781533], { duration: 2000 });
-        popup = new Popup();
-        this.olmap.addOverlay(popup);
-        this.showPop();
         hide();
       }, 1000);
       this.select.on('select', e => {
@@ -250,19 +229,53 @@ class Map extends Component {
     this.olmap.getLayers().array_[1].setSource(boundarySource);
     this.olmap.addInteraction(this.select);
   }
+  runTimeline = () => {
+    this.runner = setInterval(() => {
+      this.geoTiff.getSource().updateParams({ 'LAYERS': `agrix:ndvi${this.state.time + 2}` });
+      this.setState(state => {
+        if (state.time === 12) {
+          clearInterval(this.runner);
+          return { time: 0, timeline: 'pause' }
+        }
+        return { time: state.time + 1 }
+      });
+    }, 2000);
+  }
+  play = () => {
+    this.setState(state => state.timeline === 'pause' ? { timeline: 'play' } : { timeline: 'pause' }, () => {
+      if (this.state.timeline === 'play')
+        this.runTimeline();
+      else if (this.runner) {
+        clearInterval(this.runner);
+      }
+    });
+  }
+  updateTime = e => {
+    const { left } = e.target.getBoundingClientRect();
+    const { offsetWidth } = e.target;
+    const { x } = e.nativeEvent;
+    const offset = x - left;
+    const percentage = Math.ceil(offset / offsetWidth * 100);
+    this.setState({ time: Math.ceil(percentage / 10) }, () => {
+      this.geoTiff.getSource().updateParams({ 'LAYERS': `agrix:ndvi${this.state.time + 2}` });
+    });
+  }
   render() {
     this.updateMap();
     return (
       <>
         <Card style={{ position: 'absolute', width: '30%', zIndex: 1, top: 70, right: 20 }}>
-          <TypographyText strong>Crop Profile</TypographyText>
-          <CheckboxGroup
-            className='filter-checkbox'
-            style={{ float: 'right', paddingLeft: '30px' }}
-            options={plainOptions}
-            value={this.state.checkedList}
-            onChange={this.onChange}
-          />
+          {this.state && this.state.timeline && <div style={{display: 'flex'}}>
+            <div className='filter-checkbox'>
+              <Button type="primary" shape="circle" onClick={this.play}>
+                {this.state.timeline === 'pause' ? <Icon type="play-circle" /> : <Icon type="pause" />}
+              </Button>
+            </div>
+            <div id="custom-seekbar" onClick={this.updateTime}>
+              <span style={{ width: `${this.state.time / 11 * 100}%` }}></span>
+            </div>
+          </div>
+          }
         </Card>
         <div id="draw-map" style={{ width: "100%", height: `${this.props.height - 67}px` }}></div>
         {this.props.logged && <MapControl
