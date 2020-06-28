@@ -118,7 +118,7 @@ function Job(){
             //width: '15%',
             render: c => {
                 return c.status === 'Completed' ? <span>
-                    <Link to={`results/${c.value}`}><Button type='link'><Icon type="eye" /></Button> </Link>
+                    <Link to={`results`}><Button type='link'><Icon type="eye" /></Button> </Link>
                     <Divider type='vertical' />
                     <Button type='link' onClick={() => showDownload(true)}><Icon type="download" /></Button>
                     <Divider type='vertical' />

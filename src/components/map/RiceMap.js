@@ -11,6 +11,7 @@ import { defaults } from 'ol/interaction'
 import Draw from 'ol/interaction/Draw';
 import { doubleClick } from 'ol/events/condition';
 import Select from 'ol/interaction/Select';
+import { Fill, Stroke, Style, Text } from 'ol/style';
 import windowDimensions from 'react-window-dimensions';
 import PropType from 'prop-types';
 import axios from 'axios';
@@ -20,15 +21,51 @@ import './styles/map.scss';
 import MapControl from './MapControls';
 import 'ol/ol.css';
 import './Map.css';
-import { message, Checkbox, Card, Typography } from 'antd';
-import { border } from './utils/filter';
+import { message, Checkbox, Card, Typography, Button, Icon, Collapse, Badge, Progress } from 'antd';
+import { border, filterGeo } from './utils/filter';
+import cloneDeep from 'lodash/cloneDeep';
+import Popup from 'ol-popup';
 
 const { Text: TypographyText } = Typography;
 const CheckboxGroup = Checkbox.Group;
+const { Panel } = Collapse;
 
 const center = [0, 0];
 
 const plainOptions = ['Crop standing for full season', 'Crops failed end-season', 'Crops failed mid-season', 'Crops failed in 30 days'];
+
+const generateStyle = (strokeClr, fillClr, text, txtFillClr) => new Style({
+  stroke: new Stroke({
+    color: strokeClr,
+    width: 1
+  }),
+  fill: new Fill({
+    color: fillClr
+  }),
+  text: new Text({
+    text: text,
+    fill: new Fill({
+      color: txtFillClr
+    })
+  })
+});
+
+const styleBorder = feature => {
+  const { yield: y } = feature.values_;
+  switch (y) {
+    case 'Crop standing for full season':
+      return generateStyle('#000', 'rgba(255, 255, 0, 0.3)', feature.values_.BLKNAME, '#000');
+    case 'Crops failed end-season':
+      return generateStyle('#000', 'rgba(250, 218, 94, 0.3)', feature.values_.BLKNAME, '#000');
+    case 'Crops failed mid-season':
+      return generateStyle('#000', 'rgba(255, 99, 71, 0.3)', feature.values_.BLKNAME, '#000');
+    case 'Crops failed in 30 days':
+      return generateStyle('#000', 'rgba(211, 211, 211, 0.3)', feature.values_.BLKNAME, '#000');
+    default:
+      return generateStyle('#000', 'rgba(255, 255, 0, 0)', feature.values_.BLKNAME, '#000');
+  }
+}
+let popup;
 
 class Map extends Component {
   constructor(props) {
@@ -37,6 +74,9 @@ class Map extends Component {
       zoom: 1,
       showSubmit: false,
       level: -1,
+      time: 0,
+      timeline: 'pause',
+      visibleLayer: ['profile', 'yield', 'ndvi'],
       checkedList: ['Crop standing for full season', 'Crops failed end-season', 'Crops failed mid-season', 'Crops failed in 30 days']
     };
     this.draw = null;
@@ -55,23 +95,49 @@ class Map extends Component {
         return 'NA'
     }
   }
+  showPop = () => {
+    this.olmap.on('pointermove', (event) => {
+      if (event)
+        this.olmap.forEachFeatureAtPixel(event.pixel,
+          feature => {
+            const { values_ } = feature;
+            if (values_) {
+              popup.show(event.coordinate, `<div><p>Area: ${values_.AREA}sq.km</p><p>Expected Claim Amount: ${this.profit(values_.yield) || 0}</p></div>`);
+            }
+          },
+          {
+            layerFilter: (layer) => {
+              return (layer.type === new VectorLayer().type) ? true : false;
+            }, hitTolerance: 6
+          }
+        );
+    });
+  }
   configureMap = () => {
     let boundarySource = new VectorSource();
-    let boundaryLayer = new VectorLayer({
+    this.boundaryLayer = new VectorLayer({
       source: boundarySource,
-     // style: f => styleBorder(f)
+      style: f => styleBorder(f)
     });
-    boundaryLayer.setZIndex(1);
+    this.boundaryLayer.setZIndex(2);
 
-    const geoTiff = new TileLayer({
+    this.geoTiff = new TileLayer({
       source: new TileWMS({
         url: 'http://13.93.35.162:8080/geoserver/agrix/wms',
         params: { 'LAYERS': 'agrix:ricemap', 'TILED': true },
         transition: 0
       })
     })
-    geoTiff.setZIndex(0);
-    
+    this.geoTiff.setZIndex(0);
+
+    this.ndvi = new TileLayer({
+      source: new TileWMS({
+        url: 'http://13.93.35.162:8080/geoserver/agrix/wms',
+        params: { 'LAYERS': `agrix:ndvi1`, 'TILED': true },
+        transition: 0
+      })
+    })
+    this.ndvi.setZIndex(1);
     this.view = new OlView({
       center,
       zoom: this.state.zoom
@@ -87,8 +153,9 @@ class Map extends Component {
       target: null,
       layers: [
         raster,
-        boundaryLayer,
-        geoTiff
+        this.boundaryLayer,
+        this.geoTiff,
+        this.ndvi
       ],
       controls: [
         new Zoom({
@@ -120,9 +187,13 @@ class Map extends Component {
         })).readFeatures(border())
       });
       this.olmap.getLayers().array_[1].setSource(boundarySource);
+
       this.olmap.addInteraction(this.select);
       setTimeout(() => {
         this.olmap.getView().fit([8823982.406776493, 1150810.877901873, 8879364.36451017, 1233892.0199781533], { duration: 2000 });
+        popup = new Popup();
+        this.olmap.addOverlay(popup);
+        this.showPop();
         hide();
       }, 1000);
       this.select.on('select', e => {
@@ -227,20 +298,106 @@ class Map extends Component {
     this.olmap.getLayers().array_[1].setSource(boundarySource);
     this.olmap.addInteraction(this.select);
   }
+  runTimeline = () => {
+    this.runner = setInterval(() => {
+      this.ndvi.getSource().updateParams({ 'LAYERS': `agrix:ndvi${this.state.time + 2}` });
+      this.setState(state => {
+        if (state.time === 12) {
+          clearInterval(this.runner);
+          return { time: 0, timeline: 'pause' }
+        }
+        return { time: state.time + 1 }
+      });
+    }, 2000);
+  }
+  play = () => {
+    this.setState(state => state.timeline === 'pause' ? { timeline: 'play' } : { timeline: 'pause' }, () => {
+      if (this.state.timeline === 'play')
+        this.runTimeline();
+      else if (this.runner) {
+        clearInterval(this.runner);
+      }
+    });
+  }
+  updateTime = e => {
+    const { left } = e.target.getBoundingClientRect();
+    const { offsetWidth } = e.target;
+    const { x } = e.nativeEvent;
+    const offset = x - left;
+    const percentage = Math.ceil(offset / offsetWidth * 100);
+    this.setState({ time: Math.ceil(percentage / 10) }, () => {
+      this.ndvi.getSource().updateParams({ 'LAYERS': `agrix:ndvi${this.state.time + 2}` });
+    });
+  }
+  genExtra = layer => (
+    <Icon
+      type={this.state.visibleLayer.indexOf(layer) !== -1 ? 'eye' : 'eye-invisible'}
+      onClick={event => {
+        event.stopPropagation();
+        let visibleLayer = cloneDeep(this.state.visibleLayer);
+        const available = this.state.visibleLayer.indexOf(layer) !== -1;
+        if (available)
+          visibleLayer.splice(this.state.visibleLayer.indexOf(layer), 1);
+        else
+          visibleLayer.push(layer);
+        this.setState({ visibleLayer });
+        switch (layer) {
+          case 'profile':
+            this.geoTiff.setVisible(!available);
+            break;
+          case 'yield':
+            this.boundaryLayer.setVisible(!available);
+            break;
+          case 'ndvi':
+            this.ndvi.setVisible(!available);
+            break;
+          default:
+        }
+      }}
+    />
+  );
   render() {
     this.updateMap();
     return (
       <>
-        <Card style={{ position: 'absolute', width: '30%', zIndex: 1, top: 70, right: 20 }}>
-          <TypographyText strong>Legends</TypographyText>
-          <CheckboxGroup
-            className='filter-checkbox'
-            style={{ float: 'right', paddingLeft: '30px' }}
-            options={plainOptions}
-            value={this.state.checkedList}
-            onChange={this.onChange}
-          />
-        </Card>
+        {this.state && this.state.visibleLayer && <Card style={{ position: 'absolute', width: '30%', zIndex: 1, top: 70, right: 20 }}>
+          <Collapse defaultActiveKey={['1']} accordion>
+            <Panel header="Crop Profile" key="1" extra={this.genExtra('profile')}>
+              <TypographyText strong>Legends</TypographyText><br />
+              <Badge color='blue' text={'90% and above'} /><br />
+              <Badge color='green' text={'50% to 90%'} /><br />
+              <Badge color='red' text={'below 50%'} />
+            </Panel>
+            <Panel header="Crop Yield" key="2" extra={this.genExtra('yield')}>
+              <CheckboxGroup
+                className='filter-checkbox'
+                style={{ float: 'right', paddingLeft: '30px' }}
+                options={plainOptions}
+                value={this.state.checkedList}
+                onChange={this.onChange}
+              />
+            </Panel>
+            <Panel header="NDVI" key="3" extra={this.genExtra('ndvi')}>
+              <TypographyText strong>Legends</TypographyText><br />
+              <div style={{ display: 'flex' }}>
+                <TypographyText>-1</TypographyText>
+                <Progress strokeColor={{ '0%': '#FFF', '100%': '#87d068' }} percent={100} showInfo={false} />
+                <TypographyText>1</TypographyText>
+              </div>
+              <TypographyText strong>controls</TypographyText><br />
+              {this.state && this.state.timeline && <div style={{ display: 'flex' }}>
+                <div className='filter-checkbox'>
+                  <Button type="primary" shape="circle" onClick={this.play}>
+                    {this.state.timeline === 'pause' ? <Icon type="play-circle" /> : <Icon type="pause" />}
+                  </Button>
+                </div>
+                <div id="custom-seekbar" onClick={this.updateTime}>
+                  <span style={{ width: `${this.state.time / 11 * 100}%` }}></span>
+                </div>
+              </div>}
+            </Panel>
+          </Collapse>
+        </Card>}
         <div id="draw-map" style={{ width: "100%", height: `${this.props.height - 67}px` }}></div>
         {this.props.logged && <MapControl
           editAction={this.toggleEdit}

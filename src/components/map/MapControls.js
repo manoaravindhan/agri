@@ -364,7 +364,7 @@ const MapControls = ({ editAction, submit, clearDraw, handleSubmit, draw }) => {
         <Tooltip placement="left" title='Submit'><button onClick={() => setOpenModal('analysis')}><Icon type="check-circle" theme="filled" style={{ color: submit && '#52C41A' }} /></button>{/* //#004590 */}</Tooltip>
         <Tooltip placement="left" title='Reset'><button onClick={clear}><Icon type="close-circle" theme="filled" style={{ color: submit && '#F5222D' }} /></button>{/* //#004590 */}</Tooltip>
       </div>}
-      {draw && <div className='zoom ol-control' style={{ position: 'absolute', right: '4%', bottom: '33%' }} >
+      {draw && <div className='zoom ol-control' style={{ position: 'absolute', right: '4%', bottom: '20%' }} >
         <Tooltip placement="left" title='Statistics'><button style={{ backgroundColor: `${edit ? '#004590' : ''}` }} onClick={onStats}><Icon type="area-chart" /></button>{/* //#004590 */}</Tooltip>
       </div>}
       <Modal

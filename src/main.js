@@ -23,9 +23,7 @@ function Main(props) {
     const routes = [
         { path: "/", component: <DrawMap logged={logged} /> },
         { path: "/analysis", component: <Analysis /> },
-        { path: "/results/riceprofile", component: <RiceMap logged={logged} /> },
-        { path: "/results/ndvi", component: <NdviMap logged={logged} /> },
-        { path: "/results/profile", component: <Map logged={logged} /> }
+        { path: "/results", component: <RiceMap logged={logged} /> }
     ];
     const getRoutes = () => {
         if (logged) {
